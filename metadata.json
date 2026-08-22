@@ -1,0 +1,8 @@
+{
+  "name": "Remix Attendance Management System",
+  "description": "Multi-role college attendance management portal for Admins, Faculty, and Students with live attendance recording, roster management, and detailed reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

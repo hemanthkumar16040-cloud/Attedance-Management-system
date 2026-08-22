@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DIET Attendance Management System</title>
+    <meta name="description" content="DIET Attendance Management System" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      *::-webkit-scrollbar { display: none !important; }
+      * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+    </style>
+  </head>
+  <body class="bg-slate-900 text-slate-100 min-h-screen">
+    <div id="root"></div>
+
+    <script type="module" src="/src/main.tsx"></script>
+    <script src="shared.js"></script>
+    <script>
+      // Standalone direct-file opening fallback (when opened directly in Chrome without npm server)
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root && (!root.innerHTML || root.innerHTML.trim() === '')) {
+          renderStandaloneLogin();
+        }
+      }, 250);
+
+      function renderStandaloneLogin() {
+        const root = document.getElementById('root');
+        if (!root) return;
+
+        let activeTab = 'admin';
+
+        function draw() {
+          root.innerHTML = `
+            <div class="min-h-screen flex flex-col justify-between bg-slate-950 font-sans text-slate-100 relative overflow-hidden">
+              <div class="absolute -top-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+              <!-- Top Header -->
+              <header class="relative z-10 border-b border-slate-800 bg-slate-900/60 backdrop-blur-md px-4 sm:px-6 py-3.5">
+                <div class="max-w-4xl mx-auto flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center text-white shadow-lg font-bold text-base">
+                      ✓
+                    </div>
+                    <div>
+                      <h1 class="font-bold text-base text-white tracking-tight leading-tight">DIET Attendance Portal</h1>
+                      <p class="text-[11px] text-slate-400 font-medium">Dadi Institute of Engineering & Technology</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/60 px-3 py-1 rounded-full border border-slate-700/60">
+                    <i class="fa-solid fa-shield-check text-emerald-400"></i>
+                    <span>Direct Chrome File Access</span>
+                  </div>
+                </div>
+              </header>
+
+              <!-- Main Login Container -->
+              <main class="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
+                <div class="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col p-6 sm:p-8">
+                  <div class="text-center mb-6">
+                    <h2 class="text-xl font-bold text-white tracking-tight">Account Sign In</h2>
+                    <p class="text-xs text-slate-400 mt-1">Select your role to access your portal</p>
+                  </div>
+
+                  <!-- Role Tabs -->
+                  <div class="grid grid-cols-3 gap-1 rounded-xl bg-slate-950 p-1.5 border border-slate-800 mb-6">
+                    <button onclick="setTab('admin')" class="py-2.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      activeTab === 'admin' ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' : 'text-slate-400 hover:text-white'
+                    }">
+                      <i class="fa-solid fa-shield-halved text-xs"></i>
+                      <span>Admin</span>
+                    </button>
+                    <button onclick="setTab('faculty')" class="py-2.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      activeTab === 'faculty' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'text-slate-400 hover:text-white'
+                    }">
+                      <i class="fa-solid fa-chalkboard-user text-xs"></i>
+                      <span>Faculty</span>
+                    </button>
+                    <button onclick="setTab('student')" class="py-2.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      activeTab === 'student' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' : 'text-slate-400 hover:text-white'
+                    }">
+                      <i class="fa-solid fa-user-graduate text-xs"></i>
+                      <span>Student</span>
+                    </button>
+                  </div>
+
+                  <!-- Forms -->
+                  <form id="standalone-login-form" class="space-y-4">
+                    ${activeTab === 'admin' ? `
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Admin Username</label>
+                        <input id="login-id" type="text" value="admin" class="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white" />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+                        <input id="login-pass" type="password" value="admin123" class="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white" />
+                      </div>
+                      <button type="submit" class="w-full mt-4 py-3 px-4 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 cursor-pointer">
+                        <span>Sign In as Admin</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                      </button>
+                    ` : activeTab === 'faculty' ? `
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Faculty Email or ID</label>
+                        <input id="login-id" type="text" value="b.dileep@diet.edu.in" class="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white" />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+                        <input id="login-pass" type="password" value="faculty123" class="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white" />
+                      </div>
+                      <button type="submit" class="w-full mt-4 py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer">
+                        <span>Sign In as Faculty</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                      </button>
+                    ` : `
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Student Roll Number</label>
+                        <input id="login-id" type="text" value="24349cm081" class="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white" />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+                        <input id="login-pass" type="password" value="student123" class="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white" />
+                      </div>
+                      <button type="submit" class="w-full mt-4 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer">
+                        <span>Sign In as Student</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                      </button>
+                    `}
+                  </form>
+
+                </div>
+              </main>
+
+              <footer class="p-4 text-center text-xs text-slate-500 border-t border-slate-800">
+                Dadi Institute of Engineering & Technology (DIET) • Computer Science & Engineering
+              </footer>
+            </div>
+          `;
+
+          document.getElementById('standalone-login-form').onsubmit = (e) => {
+            e.preventDefault();
+            const idVal = document.getElementById('login-id').value.trim();
+            const passVal = document.getElementById('login-pass').value.trim();
+
+            if (activeTab === 'admin') {
+              if (idVal.toLowerCase() === 'admin' && passVal === 'admin123') {
+                AMS.setCurrentUser({ role: 'admin', name: 'Dr. Principal / Admin', email: 'admin@diet.edu.in' });
+                window.location.href = 'admin-dashboard.html';
+              } else {
+                alert('Invalid Admin credentials! Use ID: admin, Password: admin123');
+              }
+            } else if (activeTab === 'faculty') {
+              const facList = AMS.getFaculty();
+              const found = facList.find(f => f.email.toLowerCase() === idVal.toLowerCase() || f.id.toLowerCase() === idVal.toLowerCase());
+              if (found && found.password && passVal === found.password) {
+                AMS.setCurrentUser({ role: 'faculty', name: found.name, email: found.email, department: found.department });
+                window.location.href = 'faculty-dashboard.html';
+              } else {
+                alert('Invalid Faculty credentials! Default Password: faculty123');
+              }
+            } else if (activeTab === 'student') {
+              const stuList = AMS.getStudents();
+              const found = stuList.find(s => s.rollNumber.toLowerCase() === idVal.toLowerCase());
+              if (found && found.password && passVal === found.password) {
+                AMS.setCurrentUser({ role: 'student', name: found.name, rollNumber: found.rollNumber, email: found.email, department: found.department, semester: found.semester, year: found.year });
+                window.location.href = 'student-dashboard.html';
+              } else {
+                alert('Invalid Student Roll Number or Password! Default Password: student123');
+              }
+            }
+          };
+        }
+
+        window.setTab = (tab) => {
+          activeTab = tab;
+          draw();
+        };
+
+        draw();
+      }
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - DIET Attendance Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *::-webkit-scrollbar { display: none !important; }
+    * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+  </style>
+</head>
+<body class="bg-slate-100/70 text-slate-800 antialiased">
+  <div id="app-layout-container"></div>
+
+  <script src="shared.js"></script>
+  <script>
+    // Ensure student user or fallback
+    let user = AMS.getCurrentUser();
+    if (!user || user.role !== 'student') {
+      AMS.setCurrentUser({ role: 'student', name: 'Jyothi Anjana', rollNumber: '24349cm081', email: '24349cm081@diet.edu.in', department: 'CSE', semester: '5th Semester', year: '3rd Year' });
+      user = AMS.getCurrentUser();
+    }
+
+    AMS.renderLayout('student-dashboard.html', 'Student Academic Portal', 'Individual attendance percentages & lecture histories');
+
+    const students = AMS.getStudents();
+    const currentStudent = students.find(s => s.rollNumber.toLowerCase() === (user.rollNumber || '').toLowerCase()) || students[35];
+    const attendance = AMS.getAttendance();
+
+    const myRecords = attendance.filter(a => a.studentRollNumber.toLowerCase() === currentStudent.rollNumber.toLowerCase());
+    const totalClasses = myRecords.length;
+    const presentClasses = myRecords.filter(r => r.status === 'Present').length;
+    const percentage = totalClasses > 0 ? Math.round((presentClasses / totalClasses) * 100) : 100;
+
+    const subjects = AMS.getSubjects();
+    const subjectWise = subjects.map(sub => {
+      const subRecs = myRecords.filter(r => r.subjectName === sub.name);
+      const p = subRecs.filter(r => r.status === 'Present').length;
+      const pct = subRecs.length > 0 ? Math.round((p / subRecs.length) * 100) : 100;
+      return { ...sub, total: subRecs.length, present: p, percentage: pct };
+    }).filter(s => s.total > 0);
+
+    const isShortage = percentage < 75;
+
+    const contentArea = document.getElementById('page-content-area');
+    contentArea.innerHTML = `
+      <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <!-- Student Banner -->
+        <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-700">
+          <div>
+            <span class="inline-block px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-wider mb-2">Student Portal</span>
+            <h2 class="text-2xl font-extrabold">${currentStudent.name}</h2>
+            <p class="text-slate-300 text-xs mt-1">
+              Roll No: <span class="font-mono font-bold text-white">${currentStudent.rollNumber}</span> • ${currentStudent.department} • ${currentStudent.semester} (${currentStudent.year})
+            </p>
+          </div>
+          <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10 self-start md:self-auto">
+            <div class="text-left md:text-right">
+              <p class="text-[11px] text-slate-300 font-semibold uppercase tracking-wider">Overall Attendance</p>
+              <p class="text-2xl font-extrabold text-white">${percentage}%</p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-xl ${percentage >= 75 ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}">
+              ${percentage >= 75 ? '✓' : '!'}
+            </div>
+          </div>
+        </div>
+
+        <!-- Academic Standing Grid -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6">
+          <h3 class="text-base font-bold text-slate-900 mb-4 pb-3 border-b border-slate-100">
+            Student Profile & Standing
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Full Name</span>
+              <strong class="text-xs font-bold text-slate-800 block truncate">${currentStudent.name}</strong>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Roll Number</span>
+              <strong class="text-xs font-bold text-slate-800 font-mono block">${currentStudent.rollNumber}</strong>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Department</span>
+              <strong class="text-xs font-bold text-slate-800 block">${currentStudent.department}</strong>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Semester</span>
+              <strong class="text-xs font-bold text-slate-800 block">${currentStudent.semester}</strong>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Attended</span>
+              <strong class="text-xs font-bold text-slate-800 block">${presentClasses} / ${totalClasses} Classes</strong>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+              <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Standing</span>
+              <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold border ${percentage >= 75 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}">
+                ${percentage >= 75 ? 'Regular' : 'Shortage'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subject Wise Attendance -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6">
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+            <h3 class="text-base font-bold text-slate-900">Subject-wise Attendance Distribution</h3>
+            <span class="text-xs text-slate-500">Requirement: 75% minimum</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${subjectWise.map(sub => `
+              <div class="p-4 rounded-xl border ${sub.percentage < 75 ? 'border-rose-200 bg-rose-50/20' : 'border-slate-200 bg-white'} shadow-xs flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700">${sub.code}</span>
+                    <span class="text-xs font-bold ${sub.percentage >= 75 ? 'text-emerald-600' : 'text-rose-600'}">${sub.percentage}%</span>
+                  </div>
+                  <h4 class="font-bold text-xs text-slate-900 mb-1 leading-snug">${sub.name}</h4>
+                  <p class="text-[11px] text-slate-500">Faculty: ${sub.faculty}</p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100">
+                  <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden mb-1">
+                    <div class="h-full ${sub.percentage >= 75 ? 'bg-emerald-500' : 'bg-rose-500'}" style="width: ${sub.percentage}%"></div>
+                  </div>
+                  <div class="flex justify-between text-[10px] text-slate-500">
+                    <span>${sub.present} Attended</span>
+                    <span>${sub.total} Held</span>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Recent Logs -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="font-bold text-base text-slate-900">Recent Attendance History</h3>
+            <span class="text-xs text-slate-500">Last sessions logged</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                <tr>
+                  <th class="py-3 px-4">Subject</th>
+                  <th class="py-3 px-4">Date</th>
+                  <th class="py-3 px-4">Time</th>
+                  <th class="py-3 px-4">Faculty</th>
+                  <th class="py-3 px-4 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${myRecords.slice(0, 10).map(log => `
+                  <tr class="hover:bg-slate-50">
+                    <td class="py-3 px-4 font-bold text-slate-900">${log.subjectName}</td>
+                    <td class="py-3 px-4 text-slate-600 font-mono">${log.date}</td>
+                    <td class="py-3 px-4 text-slate-600">${log.time}</td>
+                    <td class="py-3 px-4 text-slate-600">${log.facultyName}</td>
+                    <td class="py-3 px-4 text-right">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${log.status === 'Present' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                        ${log.status}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  </script>
+</body>
+</html>

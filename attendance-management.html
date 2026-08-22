@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Management - DIET</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *::-webkit-scrollbar { display: none !important; }
+    * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+  </style>
+</head>
+<body class="bg-slate-100/70 text-slate-800 antialiased">
+  <div id="app-layout-container"></div>
+
+  <script src="shared.js"></script>
+  <script>
+    let user = AMS.getCurrentUser();
+    if (!user || user.role === 'student') {
+      AMS.setCurrentUser({ role: 'faculty', name: 'Mr. B. Dileep', email: 'b.dileep@diet.edu.in', department: 'CSE' });
+      user = AMS.getCurrentUser();
+    }
+
+    AMS.renderLayout('attendance-management.html', 'Attendance Management', 'Record lecture attendance for CSE 5th Semester');
+
+    const students = AMS.getStudents();
+    const subjects = AMS.getSubjects();
+    const faculty = AMS.getFaculty();
+
+    // Default form state
+    let selectedDate = new Date().toISOString().split('T')[0];
+    let selectedSubject = subjects[0].id;
+    let selectedTime = '09:00';
+    let attendanceState = {};
+
+    // Initialize all to Present
+    students.forEach(s => {
+      attendanceState[s.rollNumber] = 'Present';
+    });
+
+    function renderPage() {
+      const currentSub = subjects.find(s => s.id === selectedSubject) || subjects[0];
+      const presentCount = Object.values(attendanceState).filter(s => s === 'Present').length;
+      const absentCount = Object.values(attendanceState).filter(s => s === 'Absent').length;
+      const rate = Math.round((presentCount / students.length) * 100);
+
+      const contentArea = document.getElementById('page-content-area');
+      contentArea.innerHTML = `
+        <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+          <!-- Session Setup Card -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6">
+            <h3 class="text-base font-bold text-slate-900 mb-4 pb-3 border-b border-slate-100 flex items-center justify-between">
+              <span>Classroom Session Details</span>
+              <span class="text-xs text-blue-600 font-semibold">${currentSub.faculty}</span>
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Subject / Course</label>
+                <select id="sub-select" class="w-full text-xs py-2 px-3 border border-slate-300 rounded-lg bg-white font-medium text-slate-800">
+                  ${subjects.map(s => `
+                    <option value="${s.id}" ${s.id === selectedSubject ? 'selected' : ''}>${s.code} - ${s.name}</option>
+                  `).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Date</label>
+                <input type="date" id="date-input" value="${selectedDate}" class="w-full text-xs py-2 px-3 border border-slate-300 rounded-lg font-medium text-slate-800" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Lecture Time</label>
+                <select id="time-select" class="w-full text-xs py-2 px-3 border border-slate-300 rounded-lg bg-white font-medium text-slate-800">
+                  <option value="09:00" ${selectedTime === '09:00' ? 'selected' : ''}>09:00 AM - 10:00 AM</option>
+                  <option value="10:15" ${selectedTime === '10:15' ? 'selected' : ''}>10:15 AM - 11:15 AM</option>
+                  <option value="11:30" ${selectedTime === '11:30' ? 'selected' : ''}>11:30 AM - 12:30 PM</option>
+                  <option value="01:30" ${selectedTime === '01:30' ? 'selected' : ''}>01:30 PM - 02:30 PM</option>
+                  <option value="02:30" ${selectedTime === '02:30' ? 'selected' : ''}>02:30 PM - 03:30 PM</option>
+                  <option value="03:30" ${selectedTime === '03:30' ? 'selected' : ''}>03:30 PM - 04:30 PM</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions & Stats -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+            <div class="flex items-center gap-6">
+              <span class="text-xs font-bold text-slate-700">Total: <strong class="text-slate-900">${students.length}</strong></span>
+              <span class="text-xs font-bold text-emerald-600">Present: <strong>${presentCount}</strong></span>
+              <span class="text-xs font-bold text-rose-600">Absent: <strong>${absentCount}</strong></span>
+              <span class="text-xs font-bold text-blue-600">Rate: <strong>${rate}%</strong></span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="setAllStatus('Present')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200 transition-colors cursor-pointer">
+                ✓ Mark All Present
+              </button>
+              <button onclick="setAllStatus('Absent')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-lg border border-rose-200 transition-colors cursor-pointer">
+                ✗ Mark All Absent
+              </button>
+              <button onclick="saveAttendanceSession()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm shadow-blue-600/30 transition-all cursor-pointer">
+                Save & Submit Attendance
+              </button>
+            </div>
+          </div>
+
+          <!-- Student Roster Grid -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+              <h3 class="font-bold text-base text-slate-900">Student Attendance Register</h3>
+              <span class="text-xs text-slate-500">Tap status button to toggle Present / Absent</span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                  <tr>
+                    <th class="py-3 px-4">#</th>
+                    <th class="py-3 px-4">Roll Number</th>
+                    <th class="py-3 px-4">Student Name</th>
+                    <th class="py-3 px-4">Department & Sem</th>
+                    <th class="py-3 px-4 text-right">Attendance Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${students.map((s, idx) => {
+                    const isPres = attendanceState[s.rollNumber] === 'Present';
+                    return `
+                      <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-4 text-slate-400 font-mono">${idx + 1}</td>
+                        <td class="py-3 px-4 font-mono font-bold text-slate-900">${s.rollNumber}</td>
+                        <td class="py-3 px-4 font-medium text-slate-800">${s.name}</td>
+                        <td class="py-3 px-4 text-slate-500">${s.department} • ${s.semester}</td>
+                        <td class="py-3 px-4 text-right">
+                          <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50">
+                            <button onclick="toggleStatus('${s.rollNumber}', 'Present')" class="px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                              isPres ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                            }">
+                              Present
+                            </button>
+                            <button onclick="toggleStatus('${s.rollNumber}', 'Absent')" class="px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                              !isPres ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                            }">
+                              Absent
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('sub-select').onchange = (e) => {
+        selectedSubject = e.target.value;
+        renderPage();
+      };
+      document.getElementById('date-input').onchange = (e) => {
+        selectedDate = e.target.value;
+      };
+      document.getElementById('time-select').onchange = (e) => {
+        selectedTime = e.target.value;
+      };
+    }
+
+    function toggleStatus(roll, status) {
+      attendanceState[roll] = status;
+      renderPage();
+    }
+
+    function setAllStatus(status) {
+      students.forEach(s => {
+        attendanceState[s.rollNumber] = status;
+      });
+      renderPage();
+    }
+
+    function saveAttendanceSession() {
+      const currentSub = subjects.find(s => s.id === selectedSubject) || subjects[0];
+      const records = AMS.getAttendance();
+
+      // Remove existing records for this subject + date + time if updating
+      const filtered = records.filter(r => !(r.date === selectedDate && r.subjectId === currentSub.id && r.time === selectedTime));
+
+      let newId = Date.now();
+      students.forEach(s => {
+        filtered.push({
+          id: `att_${newId++}`,
+          date: selectedDate,
+          time: selectedTime,
+          subjectId: currentSub.id,
+          subjectName: currentSub.name,
+          department: currentSub.department,
+          semester: currentSub.semester,
+          facultyName: currentSub.faculty,
+          studentRollNumber: s.rollNumber,
+          studentName: s.name,
+          status: attendanceState[s.rollNumber] || 'Present',
+          timestamp: Date.now()
+        });
+      });
+
+      AMS.saveAttendance(filtered);
+      alert(`Attendance recorded successfully for ${currentSub.name} on ${selectedDate}!`);
+      window.location.href = 'reports.html';
+    }
+
+    renderPage();
+  </script>
+</body>
+</html>

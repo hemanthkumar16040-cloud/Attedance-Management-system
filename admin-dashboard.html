@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - DIET Attendance Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    *::-webkit-scrollbar { display: none !important; }
+    * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+  </style>
+</head>
+<body class="bg-slate-100/70 text-slate-800 antialiased">
+  <div id="app-layout-container"></div>
+
+  <script src="shared.js"></script>
+  <script>
+    // Ensure admin user or set default admin for instant offline browsing
+    let user = AMS.getCurrentUser();
+    if (!user || user.role !== 'admin') {
+      AMS.setCurrentUser({ role: 'admin', name: 'Dr. Principal / Admin', email: 'admin@diet.edu.in' });
+    }
+
+    AMS.renderLayout('admin-dashboard.html', 'Administrator Overview', 'Institutional attendance analytics & student registers');
+
+    const students = AMS.getStudents();
+    const faculty = AMS.getFaculty();
+    const subjects = AMS.getSubjects();
+    const attendance = AMS.getAttendance();
+
+    const totalSessions = attendance.length;
+    const totalPresent = attendance.filter(a => a.status === 'Present').length;
+    const avgAttendance = totalSessions > 0 ? Math.round((totalPresent / totalSessions) * 100) : 0;
+
+    // Student stats
+    const studentStats = students.map(s => {
+      const recs = attendance.filter(a => a.studentRollNumber.toLowerCase() === s.rollNumber.toLowerCase());
+      const p = recs.filter(r => r.status === 'Present').length;
+      const pct = recs.length > 0 ? Math.round((p / recs.length) * 100) : 100;
+      return { ...s, total: recs.length, present: p, percentage: pct };
+    });
+
+    const shortageStudents = studentStats.filter(s => s.percentage < 75);
+
+    const contentArea = document.getElementById('page-content-area');
+    contentArea.innerHTML = `
+      <div class="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+        <!-- Stat Cards Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-blue-600 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Enrolled</span>
+              <i class="fa-solid fa-users text-lg"></i>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900">${students.length}</h3>
+            <p class="text-xs text-slate-500 mt-1">Active Students in 5th Sem</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-indigo-600 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Faculty Members</span>
+              <i class="fa-solid fa-chalkboard-user text-lg"></i>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900">${faculty.length}</h3>
+            <p class="text-xs text-slate-500 mt-1">Teaching & Lab Staff</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-emerald-600 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Average Rate</span>
+              <i class="fa-solid fa-chart-pie text-lg"></i>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-emerald-600">${avgAttendance}%</h3>
+            <p class="text-xs text-slate-500 mt-1">${totalPresent} of ${totalSessions} attendances</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-rose-600 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Shortage Cases</span>
+              <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-rose-600">${shortageStudents.length}</h3>
+            <p class="text-xs text-slate-500 mt-1">Below 75% threshold</p>
+          </div>
+        </div>
+
+        <!-- Action Quick Links -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <a href="attendance-management.html" class="p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-sm">Mark Attendance</h4>
+              <p class="text-xs text-blue-100 mt-0.5">Record lecture or lab attendance</p>
+            </div>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+          <a href="student-management.html" class="p-4 bg-white border border-slate-200 text-slate-800 rounded-xl shadow-xs hover:border-blue-300 transition-all flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-sm">Student Directory</h4>
+              <p class="text-xs text-slate-500 mt-0.5">Manage credentials & 40 students</p>
+            </div>
+            <i class="fa-solid fa-arrow-right text-slate-400"></i>
+          </a>
+          <a href="reports.html" class="p-4 bg-white border border-slate-200 text-slate-800 rounded-xl shadow-xs hover:border-blue-300 transition-all flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-sm">Generate Reports</h4>
+              <p class="text-xs text-slate-500 mt-0.5">Export CSV & print register logs</p>
+            </div>
+            <i class="fa-solid fa-arrow-right text-slate-400"></i>
+          </a>
+        </div>
+
+        <!-- Student Attendance Register -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-base text-slate-900">Student Attendance Standings</h3>
+              <p class="text-xs text-slate-500">Live roster summary for CSE 3rd Year (5th Semester)</p>
+            </div>
+            <span class="text-xs font-bold px-3 py-1 bg-slate-100 text-slate-700 rounded-full border border-slate-200">
+              ${studentStats.length} Students
+            </span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                <tr>
+                  <th class="py-3 px-4">Roll No</th>
+                  <th class="py-3 px-4">Student Name</th>
+                  <th class="py-3 px-4">Attended / Total</th>
+                  <th class="py-3 px-4">Percentage</th>
+                  <th class="py-3 px-4 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${studentStats.map(s => `
+                  <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="py-3 px-4 font-mono font-bold text-slate-900">${s.rollNumber}</td>
+                    <td class="py-3 px-4 font-medium text-slate-800">${s.name}</td>
+                    <td class="py-3 px-4 text-slate-600">${s.present} / ${s.total} Sessions</td>
+                    <td class="py-3 px-4 font-bold ${s.percentage >= 75 ? 'text-emerald-600' : 'text-rose-600'}">
+                      <div class="flex items-center gap-2">
+                        <div class="w-16 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                          <div class="h-full ${s.percentage >= 75 ? 'bg-emerald-500' : 'bg-rose-500'}" style="width: ${s.percentage}%"></div>
+                        </div>
+                        <span>${s.percentage}%</span>
+                      </div>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                      <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${s.percentage >= 75 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                        ${s.percentage >= 75 ? 'Eligible' : 'Shortage'}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  </script>
+</body>
+</html>
